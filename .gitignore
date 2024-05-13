@@ -67,5 +67,7 @@ buildNumber.properties
 # ------ #
 .idea/
 .mule/
+**/.DS_Store
 **/*.jks
+**/*.orig
 **/mule-props-*.yaml
