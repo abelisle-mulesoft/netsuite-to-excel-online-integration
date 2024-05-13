@@ -1,0 +1,337 @@
+{
+	"info": {
+		"_postman_id": "5eb4de4d-3402-401d-baa8-9fa05f5d4df2",
+		"name": "Microsoft Excel Online",
+		"description": "This collection includes several requests used to explore the Microsoft Graph API to clear and update an existing Excel worksheet.\n\nThe sequence of steps clear and update an existing Excel worksheet using the Microsoft Graph API is:\n\n1. _**Get a token**_ in the Authentication folder. This request includes post-processing logic to update the _accessToken_ variable used in other requests.\n2. _**List users**_ in the Users folder to identify the relevant user and, more importantly, its ID. You must manually update the _userId_ variable with this ID.\n3. In the Files folder:\n    1. _**List a user's drives**_ to identify the relevant drive and get its ID. You must manually update the _driveId_ variable with this ID.\n    2. Then, _**List children in the root of a user's drive**_ to identify the Excel spreadsheet and get its ID. You must manually update the itemId variable with this ID.\n4. In the Workbooks folder:\n    \n    1. _**Clear Worksheet Range**_ to clear the entire worksheet of the Excel spreadsheet.\n        \n    2. _**Update Worksheet Range**_ to insert new data into the worksheet. This example inserts the basic JSON data included in the Body tab. It does not include cell formatting, formlulas, data types, etc.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "16873374"
+	},
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Get a token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"let payload = pm.response.json();",
+									"",
+									"console.log(payload);",
+									"",
+									"pm.collectionVariables.set(\"accessToken\", payload.access_token );",
+									"",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "client_id",
+									"value": "{{clientId}}",
+									"type": "text"
+								},
+								{
+									"key": "client_secret",
+									"value": "{{clientSecret}}",
+									"type": "text"
+								},
+								{
+									"key": "scope",
+									"value": "https://graph.microsoft.com/.default",
+									"type": "text"
+								},
+								{
+									"key": "grant_type",
+									"value": "client_credentials",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "https://login.microsoftonline.com/{{tenantId}}/oauth2/v2.0/token",
+							"protocol": "https",
+							"host": [
+								"login",
+								"microsoftonline",
+								"com"
+							],
+							"path": [
+								"{{tenantId}}",
+								"oauth2",
+								"v2.0",
+								"token"
+							]
+						},
+						"description": "This request sends a POST request to the Microsoft identity platform to get a token using the client credentials grant. This request is based on the example \"_**First case: Access token request with a shared secret**_\" in the article \"_**Microsoft identity platform and the OAuth 2.0 client credentials flow**_\" - [https://learn.microsoft.com/en-us/entra/identity-platform/v2-oauth2-client-creds-grant-flow#first-case-access-token-request-with-a-shared-secret](https://learn.microsoft.com/en-us/entra/identity-platform/v2-oauth2-client-creds-grant-flow#first-case-access-token-request-with-a-shared-secret)"
+					},
+					"response": []
+				}
+			],
+			"description": "This folder contains a single API request for authentication using the Microsoft Identity Platform API and getting an access token.\n\n**Resource:** Microsoft identity platform and the OAuth 2.0 client credentials flow - [https://learn.microsoft.com/en-us/entra/identity-platform/v2-oauth2-client-creds-grant-flow#get-a-token](https://learn.microsoft.com/en-us/entra/identity-platform/v2-oauth2-client-creds-grant-flow#get-a-token)"
+		},
+		{
+			"name": "Users",
+			"item": [
+				{
+					"name": "List users",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": {
+							"raw": "https://graph.microsoft.com/v1.0/users?$select=displayName,id",
+							"protocol": "https",
+							"host": [
+								"graph",
+								"microsoft",
+								"com"
+							],
+							"path": [
+								"v1.0",
+								"users"
+							],
+							"query": [
+								{
+									"key": "$select",
+									"value": "displayName,id"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "This folder contains a single API request to retrieve the list of users from Microsoft Office online with their ID (e.g., \"cd6ff6c5-a5fd-4019-97fa-82ec27cd7710\"). The user ID allows retrieving all the users' drives and, ultimately, getting the ID of the Excel workbook to update.\n\n**Resource:** Working with users in Microsoft Graph - [https://learn.microsoft.com/en-us/graph/api/resources/users?view=graph-rest-1.0](https://learn.microsoft.com/en-us/graph/api/resources/users?view=graph-rest-1.0)"
+		},
+		{
+			"name": "Files",
+			"item": [
+				{
+					"name": "List a user's drives",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": {
+							"raw": "https://graph.microsoft.com/v1.0/users/{{userId}}/drives?$select=name,id,webUrl",
+							"protocol": "https",
+							"host": [
+								"graph",
+								"microsoft",
+								"com"
+							],
+							"path": [
+								"v1.0",
+								"users",
+								"{{userId}}",
+								"drives"
+							],
+							"query": [
+								{
+									"key": "$select",
+									"value": "name,id,webUrl"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "List children in the root of a user's drive",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": {
+							"raw": "https://graph.microsoft.com/v1.0/drives/{{driveId}}/root/children?$select=name,id",
+							"protocol": "https",
+							"host": [
+								"graph",
+								"microsoft",
+								"com"
+							],
+							"path": [
+								"v1.0",
+								"drives",
+								"{{driveId}}",
+								"root",
+								"children"
+							],
+							"query": [
+								{
+									"key": "$select",
+									"value": "name,id"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "This folder contains two API requests to interact with drives and files in Microsoft Office online. The first retrieves all the drives for the specified user, and the second retrieves the list of folders and files for the specified drive.\n\n**Resource:** Working with files in Microsoft Graph - [https://learn.microsoft.com/en-us/graph/api/resources/onedrive?view=graph-rest-1.0](https://learn.microsoft.com/en-us/graph/api/resources/onedrive?view=graph-rest-1.0)"
+		},
+		{
+			"name": "Workbooks",
+			"item": [
+				{
+					"name": "Clear Worksheet Range",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": {
+							"raw": "https://graph.microsoft.com/v1.0/drives/{{driveId}}/items/{{itemId}}/workbook/worksheets/{{worksheetName}}/range(address='A:XFD')/clear",
+							"protocol": "https",
+							"host": [
+								"graph",
+								"microsoft",
+								"com"
+							],
+							"path": [
+								"v1.0",
+								"drives",
+								"{{driveId}}",
+								"items",
+								"{{itemId}}",
+								"workbook",
+								"worksheets",
+								"{{worksheetName}}",
+								"range(address='A:XFD')",
+								"clear"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Worksheet Range",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"values\": [\n        [\n            \"contact_id\",\n            \"first_name\",\n            \"last_name\",\n            \"company\",\n            \"department\",\n            \"job_title\",\n            \"work_phone\",\n            \"mobile_phone\",\n            \"email\",\n            \"active\"\n        ],\n        [\n            100000005,\n            \"Katusha\",\n            \"Kalinke\",\n            \"Blogtags\",\n            \"Services\",\n            \"Project Manager\",\n            8626689868,\n            7516663630,\n            \"kkalinkeg1p@furl.net\",\n            false\n        ],\n        [\n            100000014,\n            \"Isabel\",\n            \"Varrow\",\n            \"Skilith\",\n            \"Services\",\n            \"Financial Advisor\",\n            3907257494,\n            4778869025,\n            \"ivarrowfrx@geocities.jp\",\n            false\n        ],\n        [\n            100000022,\n            \"Germayne\",\n            \"Colbridge\",\n            \"Thoughtworks\",\n            \"Sales\",\n            \"Civil Engineer\",\n            6171651584,\n            6756240980,\n            \"gcolbridge1jq0@forbes.com\",\n            false\n        ]\n    ]\n}\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://graph.microsoft.com/v1.0/drives/{{driveId}}/items/{{itemId}}/workbook/worksheets/{{worksheetName}}/range(address='A1:J4')",
+							"protocol": "https",
+							"host": [
+								"graph",
+								"microsoft",
+								"com"
+							],
+							"path": [
+								"v1.0",
+								"drives",
+								"{{driveId}}",
+								"items",
+								"{{itemId}}",
+								"workbook",
+								"worksheets",
+								"{{worksheetName}}",
+								"range(address='A1:J4')"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "This folder contains two API requests to interact with drives and files in Microsoft Office online. This folder contains two API requests to interact with Excel worksheets (a.k.a. Excel sheets) in Microsoft Office online. The first uses a specially annotated range (i.e., 'A:XFD') to clear the entire worksheet. The second inserts the JSON data provided in the body onto the same worksheet. The range specified in the URL must match the data included in the request body (e.g., 4 rows of 10 columns vs. 'A1:J4').\n\nResource: Working with Excel in Microsoft Graph - [https://learn.microsoft.com/en-us/graph/api/resources/excel?view=graph-rest-1.0](https://learn.microsoft.com/en-us/graph/api/resources/excel?view=graph-rest-1.0)"
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "accessToken",
+			"value": "<access_token>",
+			"type": "string"
+		},
+		{
+			"key": "clientId",
+			"value": "<client_id>"
+		},
+		{
+			"key": "clientSecret",
+			"value": "<client_secret>"
+		},
+		{
+			"key": "tenantId",
+			"value": "<tenant_id>"
+		},
+		{
+			"key": "userId",
+			"value": "<user_id>"
+		},
+		{
+			"key": "itemId",
+			"value": "<item_id>"
+		},
+		{
+			"key": "driveId",
+			"value": "<drive_id>",
+			"type": "string"
+		},
+		{
+			"key": "worksheetName",
+			"value": "<worksheet_name>"
+		}
+	]
+}
