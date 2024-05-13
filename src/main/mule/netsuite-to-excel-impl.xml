@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:netsuite="http://www.mulesoft.org/schema/mule/netsuite" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/netsuite http://www.mulesoft.org/schema/mule/netsuite/current/mule-netsuite.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+	<flow name="put-worksheet-impl-flow" doc:id="53add583-ff11-4fc3-8c04-0caa191d8234" >
+		<logger level="TRACE" doc:name="Trace - Flow Starting" doc:id="541b65ca-24a0-47bc-b08a-72f856903593" message="Flow starting" />
+		<set-variable value="#[attributes.queryParams.id]" doc:name="searchId" doc:id="8bebf64c-f8ac-4bff-8369-9c5226692b2d" variableName="searchId" />
+		<flow-ref doc:name="get-saved-search-impl-flow" doc:id="b714967c-0dd5-4dd0-8fb0-2fc60f026090" name="get-saved-search-impl-flow"/>
+		<flow-ref doc:name="get-oauth2-token-flow" doc:id="854bd523-d6b9-4e2e-9936-45932b67ee8e" name="get-oauth2-token-flow" />
+		<flow-ref doc:name="update-excel-worksheet-flow" doc:id="adcc21e4-3d67-4e02-bd01-529c084cee33" name="update-excel-worksheet-flow" />
+		<logger level="TRACE" doc:name="Trace - Successfully Updated Worksheet" doc:id="3a5cc68b-b055-4792-aad7-8a13d87587b4" message="Successfully updated worksheet" />
+		<ee:transform doc:name="Create API Response" doc:id="2ed6402b-d3ea-42db-9688-b28d0e9b02a2" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	dateTime: now(),
+	httpStatus: 200,
+	summaryMessage: "Operation completed successfully"
+}]]></ee:set-payload>
+			</ee:message>
+			<ee:variables />
+		</ee:transform>
+		<logger level="TRACE" doc:name="Trace - Flow Ending" doc:id="a1035e41-5502-4edf-b6aa-b597ac815503" message="Flow ending" />
+	</flow>
+	<flow name="get-saved-search-impl-flow" doc:id="38b11130-e619-4020-adb6-62671e4e2446" >
+		<logger level="TRACE" doc:name="Trace - Flow Starting" doc:id="8c0705d0-dc93-4b16-8e38-f8a86f5c3f83" message="Flow starting" />
+		<logger level="TRACE" doc:name="Trace - Creating NetSuite Request" doc:id="1294ec34-224e-4dc4-846d-74945a42bc30" message="Creating NetSuite search request"/>
+		<ee:transform doc:name="Create NetSuite Request" doc:id="88aba48e-0dea-4bfe-87ad-4e09b3b1babe" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/xml
+ns ns0 urn:messages.platform.webservices.netsuite.com
+ns q1 urn:accounting.lists.webservices.netsuite.com
+ns q02 urn:common.platform.webservices.netsuite.com
+---
+{
+	ns0#search: {
+		ns0#searchRecord @("xmlns:q1": q1, xsi#"type": "q1:ItemSearchAdvanced", "savedSearchId": vars.searchId): {
+			q1#columns: {
+				q1#basic: {
+					q02#displayName: null,
+					q02#externalId: null,
+					q02#internalId: null,
+					q02#itemId: null,
+					q02#"type": null
+				}
+			}
+		}
+	}
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="TRACE" doc:name="Trace - Executing Saved Search " doc:id="56b811a0-e93f-4122-8c67-8cb9f0cc06eb" message="Calling NetSuite to execute saved search "/>
+		<netsuite:search doc:name="ItemSearchAdvanced" doc:id="de36379b-ebd1-4348-baab-5021c3128c92" config-ref="NetSuite_Config" key="ItemSearchAdvanced" />
+		<ee:transform doc:name="Create API Response" doc:id="48df6838-a8bc-4d69-a41b-22336c69aedc">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+import replaceAll from dw::core::Strings
+output application/json
+
+---
+payload map ( payload01 , indexOfPayload01 ) -> {
+	itemId: payload01.payload.searchRow.basic.displayName.searchValue,
+	displayName: payload01.payload.searchRow.basic.itemId.searchValue replace '"' with(" inch"),
+	available: "true"
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<ee:transform doc:name="Input to Excel Format" doc:id="dcc30fee-f136-42b9-bc97-33558699c0a6">
+			<ee:message />
+			<ee:variables>
+				<ee:set-variable variableName="updatePath"><![CDATA[%dw 2.0
+output application/java
+---
+"/range(address='A1:C" ++ (sizeOf(payload) as String) ++ "')"]]></ee:set-variable>
+				<ee:set-variable variableName="worksheetData"><![CDATA[%dw 2.0
+output application/json
+---
+{
+	values: payload map (valuesOf($))
+}]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<logger level="TRACE" doc:name="Trace - Flow Ending" doc:id="055c1667-1ece-43e1-a741-d4955494d83f" message="Flow ending" />
+	</flow>
+	<flow name="get-oauth2-token-flow" doc:id="01514aab-8421-4f38-b237-1a676fcd1d3b" >
+		<logger level="TRACE" doc:name="Trace - Flow Starting" doc:id="67fa749d-4ece-4335-afa0-aa87aa82072f" message="Flow starting" />
+		<logger level="TRACE" doc:name="Trace - Creating Microsoft Login Request" doc:id="616211ca-7633-44d8-b2a2-d2990ff52cd8" message="Creating Microsoft login request"/>
+		<ee:transform doc:name="Create Microsoft Login Request" doc:id="f37d0c18-32c3-4384-a835-5a201a33fd07">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/x-www-form-urlencoded
+---
+{
+	client_id:     p('azure.client_id'),
+	client_secret: p('azure.client_secret'),
+	scope:         p('ms_login.scope'),
+	grant_type:    p('ms_login.grant_type')
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="TRACE" doc:name="Trace - Getting OAuth2 Token" doc:id="aff8202f-7a74-49d3-80d7-22594acf0d59" message="Getting OAuth2 token using Microsoft login"/>
+		<http:request method="POST" doc:name="Get OAuth2 token using Microsoft Login" doc:id="22821dc8-ce23-4c4b-a142-ea6b9fc2a933" config-ref="MS_Login_HTTP_Request_Config" path="/"/>
+		<set-variable value="#[payload.access_token]" doc:name="oauthToken" doc:id="f70032aa-ed19-4c8e-9c45-94bb11754956" variableName="oauthToken" mimeType="application/json" />
+		<logger level="TRACE" doc:name="Trace - Successfully Got Token" doc:id="3876da24-b578-416f-9b25-9c489182c254" message="Successfully got OAuth2 token" />
+		<logger level="TRACE" doc:name="Trace - Flow Ending" doc:id="bde1a181-7673-4580-a500-4c353d4299af" message="Flow ending" />
+	</flow>
+	<flow name="update-excel-worksheet-flow" doc:id="737ecb16-5cc7-4dc4-9f96-07b1d457badf" >
+		<logger level="TRACE" doc:name="Trace - Flow Starting" doc:id="d60f7c6c-f27e-48dd-ba50-ab00b6532a08" message="Flow starting" />
+		<logger level="TRACE" doc:name="Trace - Clearing Worksheet" doc:id="2453c846-4bd8-4511-9750-537bc518dbd2" message="Clearing Excel worksheet" />
+		<http:request method="POST" doc:name="Clear Excel Worksheet" doc:id="9ea66519-3f86-4cea-abaa-7280a1c94597" config-ref="Office365_HTTP_Request_Config" path="${office.clear_path}">
+			<http:body ><![CDATA[#[""]]]></http:body>
+			<http:headers ><![CDATA[#[output application/java
+---
+{
+	"Authorization" : "Bearer " ++ vars.oauthToken
+}]]]></http:headers>
+		</http:request>
+		<logger level="TRACE" doc:name="Trace - Inserting Data into Worksheet" doc:id="a0e979eb-2acb-4ed1-a813-9bba63364f52" message="Inserting data into Excel worksheet" />
+		<http:request method="PATCH" doc:name="Insert Data into Worksheet" doc:id="52f0af68-d05b-48e3-9e2d-3817681b65cf" config-ref="Office365_HTTP_Request_Config" path="#[vars.updatePath]" outputMimeType="application/json">
+			<http:body ><![CDATA[#[vars.worksheetData]]]></http:body>
+			<http:headers ><![CDATA[#[output application/java
+---
+{
+	"Authorization" : "Bearer " ++ vars.oauthToken
+}]]]></http:headers>
+		</http:request>
+		<logger level="TRACE" doc:name="Trace - Flow Ending" doc:id="9e725e70-f213-4daa-b041-596d10738654" message="Flow ending" />
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="5f685160-6cbc-4e86-a371-0253383a1c6f" type="ANY">
+				<logger level="ERROR" doc:name="Error - Log Error Payload" doc:id="efca5652-c2bb-4de1-9865-76ca1dc16e45" message="#[output application/json --- error.errorMessage.payload]" />
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+</mule>

@@ -1,0 +1,18 @@
+#%RAML 1.0
+title: NetSuite to Excel API
+
+mediaType:
+  - application/json
+
+/item:
+  get:
+    body: {}
+    queryParameters:
+      id:
+        type: string
+        default: "9018"
+    responses:
+      "200":
+        body:
+          application/json:
+            type: any

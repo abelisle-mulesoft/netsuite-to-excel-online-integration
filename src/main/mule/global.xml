@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:netsuite="http://www.mulesoft.org/schema/mule/netsuite" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/netsuite http://www.mulesoft.org/schema/mule/netsuite/current/mule-netsuite.xsd">
+	<global-property doc:name="Global Property" doc:id="094cdcf2-0801-46ee-a510-6c88a8766d24" name="env" value="local" />
+	<configuration-properties doc:name="Configuration properties" doc:id="18e1dbb6-7e2b-43ff-92c4-ccde9de6606f" file="properties/mule-props-${env}.yaml" />
+    <http:listener-config name="netsuite-to-excel-httpListenerConfig">
+        <http:listener-connection host="${http_listener.http.host}" port="${http_listener.http.port}" />
+    </http:listener-config>
+	<netsuite:config name="NetSuite_Config" doc:name="NetSuite Config" doc:id="58d70991-f420-4f9f-bd47-5efc4c2ac897" >
+		<netsuite:token-based-authentication-connection consumerKey="${netsuite.consumerKey}" consumerSecret="${netsuite.consumerSecret}" tokenId="${netsuite.tokenId}" tokenSecret="${netsuite.tokenSecret}" account="${netsuite.accountId}" wsdlVersion="V2021_1" signatureAlgorithm="${netsuite.signatureAlgorithm}"/>
+	</netsuite:config>
+	<http:request-config name="MS_Login_HTTP_Request_Config" doc:name="HTTP Request configuration" doc:id="b26f7175-3a46-4848-8edd-93b2a7124d34" basePath="${ms_login.base_path}" >
+		<http:request-connection protocol="${ms_login.protocol}" host="${ms_login.host}" port="${ms_login.port}" usePersistentConnections="false" />
+	</http:request-config>
+	<http:request-config name="Office365_HTTP_Request_Config" doc:name="HTTP Request configuration" doc:id="18edf9c8-ed3f-4cda-8aa8-a7b244a97e5c" basePath="${office.base_path}" >
+		<http:request-connection protocol="${office.protocol}" host="${office.host}" port="${office.port}" usePersistentConnections="false" />
+	</http:request-config>
+</mule>

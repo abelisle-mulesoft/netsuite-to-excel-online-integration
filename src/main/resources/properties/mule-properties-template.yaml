@@ -1,0 +1,50 @@
+#===================================================================================================
+# Mule application properties template
+#===================================================================================================
+
+env:
+  name: "local"   # Anypoint Studio/local environment
+  # name: "dev"   # Development/sandbox environment
+
+http_listener:
+  http:
+    host: "0.0.0.0"
+    port: "8081"
+  https:
+    host: "0.0.0.0"
+    port: "8082"
+
+netsuite:
+  consumerKey:    <NetSuite Consumer Key>
+  consumerSecret: <NetSuite Consumer Secret>
+  tokenId:        <NetSuite Token ID>
+  tokenSecret:    <NetSuite Token Secret>
+  accountId:      <NetSuite Account ID>
+  signatureAlgorithm: "HMAC_SHA256"
+
+# Properties required for authentication and getting an access token
+azure:
+  tenant_id:      <Azure Tenant ID>
+  client_id:      <Registered App Client ID>
+  client_secret:  <Registered App Client Secret>
+
+# Properties relevant to Microsoft Identity Platform API
+ms_login:
+  host:       "login.microsoftonline.com"
+  port:       ""   # blank/use default port
+  protocol:   "HTTPS"
+  base_path:  "/${azure.tenant_id}/oauth2/v2.0/token"
+  scope:      "https://graph.microsoft.com/.default"
+  grant_type: "client_credentials"
+
+# Properties relevant to the Microsoft Graph API, which is used to interact with
+# Office Online and Excel Online
+office:
+  host:         "graph.microsoft.com"
+  port:         ""   # blank/use default port
+  protocol:     "HTTPS"
+  base_path:    "/v1.0/drives/${office.drive_id}/items/${office.item_id}/workbook/worksheets/${office.sheet_name}"
+  drive_id:     <Drive ID>
+  item_id:      <Excel File/Item ID>
+  sheet_name:   "Sheet1"   # Name of the worksheet to clear and update
+  clear_path:   "/range(address='A:XFD')/clear"   # Clears the entire sheet, regardless of range
