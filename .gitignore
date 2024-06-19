@@ -65,9 +65,12 @@ buildNumber.properties
 # ------ #
 # Custom #
 # ------ #
+.vscode/
 .idea/
 .mule/
 **/.DS_Store
 **/*.jks
 **/*.orig
 **/mule-props-*.yaml
+
+.tooling-project
